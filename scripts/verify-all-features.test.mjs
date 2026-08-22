@@ -237,3 +237,34 @@ test("9. FEATURE: Obľúbené inzeráty (Bookmarks) & Porovnávač v LocalStorag
   delete global.localStorage;
 });
 
+/* =========================================================================
+   TEST 10: Telefónny Hub & Export Kontaktov (VCF / CSV)
+   ========================================================================= */
+test("10. FEATURE: Telefónny Hub & VCF/CSV Exportér kontaktov", async () => {
+  const {
+    extractContactsFromListings,
+    generateVcfContacts,
+    generateCsvContacts,
+  } = await import("../src/lib/contacts-export.ts");
+
+  const contacts = extractContactsFromListings([
+    {
+      id: "cz-1",
+      title: "iPhone 16",
+      country: "CZ",
+      listingPhones: [{ phoneE164: "+420777123456", phoneRaw: "777 123 456" }],
+    },
+  ]);
+
+  assert.equal(contacts.length, 1);
+  assert.equal(contacts[0].phone, "+420777123456");
+
+  const vcf = generateVcfContacts(contacts);
+  assert.ok(vcf.includes("BEGIN:VCARD"));
+  assert.ok(vcf.includes("+420777123456"));
+
+  const csv = generateCsvContacts(contacts);
+  assert.ok(csv.includes("+420777123456"));
+});
+
+

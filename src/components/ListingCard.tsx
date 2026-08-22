@@ -2,14 +2,23 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, Heart, MapPin, Phone, PhoneCall } from "lucide-react";
+import {
+  ExternalLink,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  PhoneCall,
+  Search,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryName } from "@/lib/categories";
 import { formatPrice, formatRelativeTime } from "@/lib/utils";
 import { extractPhonesFromText } from "@/lib/bazos-phone";
 import { calculateDistanceFromVaclavak } from "@/lib/praha-distance";
-import { isStoredFavorite, toggleStoredFavorite } from "@/lib/offline-storage";
+import { isStoredFavorite, toggleStoredFavorite, addStoredListings } from "@/lib/offline-storage";
 
 export interface ListingData {
   id: string;
@@ -59,6 +68,40 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
 
   // Stav obľúbeného inzerátu (Záložky / Bookmarks)
   const [isFav, setIsFav] = useState(() => (typeof window !== "undefined" ? isStoredFavorite(listing.id) : false));
+
+  // On-demand phone discovery state
+  const [discoveredPhones, setDiscoveredPhones] = useState<string[]>([]);
+  const [isScrapingPhone, setIsScrapingPhone] = useState(false);
+
+  const allPhones = Array.from(new Set([...uniquePhones, ...discoveredPhones]));
+
+  const handleScrapePhone = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isScrapingPhone) return;
+    setIsScrapingPhone(true);
+    try {
+      const res = await fetch(`/api/scrape-phone?url=${encodeURIComponent(listing.url)}&id=${listing.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.phones && data.phones.length > 0) {
+          setDiscoveredPhones(data.phones);
+          // Persist to LocalStorage
+          addStoredListings([
+            {
+              ...listing,
+              location: data.location || listing.location,
+              listingPhones: data.phones.map((p: string) => ({ phoneE164: p, phoneRaw: p })),
+            },
+          ]);
+        }
+      }
+    } catch {
+      // Graceful fallback
+    } finally {
+      setIsScrapingPhone(false);
+    }
+  };
 
   return (
     <Card className="overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
@@ -177,30 +220,83 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
               )}
             </div>
 
-            {/* Prominent Phone Number section */}
+            {/* Prominent Phone Number section with WhatsApp, SMS and On-demand Scraper */}
             <div className="mt-2.5 pt-2 border-t border-border/40 flex flex-wrap items-center gap-2">
-              {uniquePhones.length > 0 ? (
-                uniquePhones.map((phone) => (
-                  <button
-                    key={phone}
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      window.location.href = `tel:${phone}`;
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold font-mono text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors shadow-xs"
-                    title="Klikni pre vytočenie čísla"
-                  >
-                    <PhoneCall className="h-3.5 w-3.5" />
-                    <span>{phone}</span>
-                  </button>
-                ))
+              {allPhones.length > 0 ? (
+                allPhones.map((phone) => {
+                  const cleanDigits = phone.replace(/\D/g, "");
+                  const inquiryMsg = encodeURIComponent(
+                    `Dobrý deň, mám záujem o Váš inzerát na Bazoši: "${listing.title}" za ${formatPrice(listing.price, listing.priceLabel, currency)}. Je ešte voľný?`
+                  );
+                  return (
+                    <div key={phone} className="flex flex-wrap items-center gap-1.5">
+                      {/* 1-Click Direct Call */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `tel:${phone}`;
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold font-mono text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors shadow-xs"
+                        title="Klikni pre vytočenie hovoru"
+                      >
+                        <PhoneCall className="h-3.5 w-3.5" />
+                        <span>{phone}</span>
+                      </button>
+
+                      {/* 1-Click WhatsApp */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.open(`https://wa.me/${cleanDigits}?text=${inquiryMsg}`, "_blank", "noopener,noreferrer");
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border border-green-500/30 bg-green-500/10 px-2 py-1 text-[11px] font-medium text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-colors"
+                        title="Napísať predajcovi na WhatsApp"
+                      >
+                        <MessageCircle className="h-3 w-3" />
+                        <span>WhatsApp</span>
+                      </button>
+
+                      {/* 1-Click SMS */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          window.location.href = `sms:${phone}?body=${inquiryMsg}`;
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border border-blue-500/30 bg-blue-500/10 px-2 py-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                        title="Poslať SMS predajcovi"
+                      >
+                        <MessageSquare className="h-3 w-3" />
+                        <span>SMS</span>
+                      </button>
+                    </div>
+                  );
+                })
               ) : (
-                <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Phone className="h-3 w-3" />
-                  <span>Telefón overiteľný na inzeráte</span>
-                </div>
+                <button
+                  type="button"
+                  disabled={isScrapingPhone}
+                  onClick={handleScrapePhone}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-all active:scale-95 disabled:opacity-60"
+                  title="Zistiť telefónne číslo z detailu inzerátu"
+                >
+                  {isScrapingPhone ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span>Zisťujem tel. číslo...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-3.5 w-3.5" />
+                      <span>🔍 Zistiť tel. číslo</span>
+                    </>
+                  )}
+                </button>
               )}
             </div>
           </div>
