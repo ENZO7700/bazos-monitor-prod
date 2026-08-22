@@ -9,7 +9,18 @@ import {
   getStoredPhoneWatches,
   saveStoredPhoneWatch,
   deleteStoredPhoneWatch,
+  getStoredFavoriteIds,
+  toggleStoredFavorite,
+  isStoredFavorite,
+  getStoredFavoriteListings,
 } from "./offline-storage";
+
+export {
+  getStoredFavoriteIds,
+  toggleStoredFavorite,
+  isStoredFavorite,
+  getStoredFavoriteListings,
+};
 
 export interface Watch {
   id: string;

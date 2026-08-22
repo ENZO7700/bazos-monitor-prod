@@ -10,6 +10,7 @@ const desktopLinks = [
   { href: "/", label: "Dashboard" },
   { href: "/watches", label: "Sledovania" },
   { href: "/listings", label: "Inzeráty" },
+  { href: "/favorites", label: "❤️ Obľúbené" },
   { href: "/phones", label: "Telefóny" },
   { href: "/settings", label: "Nastavenia" },
 ];

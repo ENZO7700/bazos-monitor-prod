@@ -408,3 +408,41 @@ export function deleteStoredPhoneWatch(id: string): void {
   const list = getStoredPhoneWatches();
   writeJson(PHONE_WATCHES_KEY, list.filter((p) => p.id !== id));
 }
+
+/* =========================================================================
+   FAVORITES / BOOKMARKS (Obľúbené inzeráty v LocalStorage)
+   ========================================================================= */
+
+export const FAVORITES_KEY = "bazos:favorites";
+
+export function getStoredFavoriteIds(): string[] {
+  return readJson<string[]>(FAVORITES_KEY, []);
+}
+
+export function isStoredFavorite(id: string): boolean {
+  const favorites = getStoredFavoriteIds();
+  return favorites.includes(id);
+}
+
+export function toggleStoredFavorite(id: string): boolean {
+  const favorites = getStoredFavoriteIds();
+  const index = favorites.indexOf(id);
+  let isFav = false;
+  if (index >= 0) {
+    favorites.splice(index, 1);
+    isFav = false;
+  } else {
+    favorites.unshift(id);
+    isFav = true;
+  }
+  writeJson(FAVORITES_KEY, favorites);
+  return isFav;
+}
+
+export function getStoredFavoriteListings(): Listing[] {
+  const favorites = new Set(getStoredFavoriteIds());
+  if (favorites.size === 0) return [];
+  const listings = readJson<Listing[]>(CACHED_LISTINGS_KEY, []);
+  return listings.filter((l) => favorites.has(l.id));
+}
+

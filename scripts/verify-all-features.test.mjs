@@ -195,3 +195,45 @@ test("8. FEATURE: AI Espresso Digest s Mistral AI a TOP ponukami", () => {
   assert.ok(TARGET_DIGEST_QUERIES.some((q) => q.name.toLowerCase().includes("macbook")));
   assert.ok(TARGET_DIGEST_QUERIES.some((q) => q.name.toLowerCase().includes("razer")));
 });
+
+/* =========================================================================
+   TEST 9: Obľúbené inzeráty & Porovnávač (Bookmarks)
+   ========================================================================= */
+test("9. FEATURE: Obľúbené inzeráty (Bookmarks) & Porovnávač v LocalStorage", async () => {
+  const mockStorage = new Map();
+  global.window = {
+    localStorage: {
+      getItem: (k) => mockStorage.get(k) ?? null,
+      setItem: (k, v) => mockStorage.set(k, String(v)),
+      removeItem: (k) => mockStorage.delete(k),
+      clear: () => mockStorage.clear(),
+      get length() { return mockStorage.size; },
+      key: (i) => Array.from(mockStorage.keys())[i] ?? null,
+    },
+  };
+  global.localStorage = global.window.localStorage;
+
+  const {
+    getStoredFavoriteIds,
+    toggleStoredFavorite,
+    isStoredFavorite,
+    getStoredFavoriteListings,
+    addStoredListings,
+  } = await import("../src/lib/offline-storage.ts");
+
+  // Pridanie inzerátu do obľúbených
+  const added = toggleStoredFavorite("deal-123");
+  assert.equal(added, true);
+  assert.equal(isStoredFavorite("deal-123"), true);
+  assert.deepEqual(getStoredFavoriteIds(), ["deal-123"]);
+
+  // Odstránenie z obľúbených
+  const removed = toggleStoredFavorite("deal-123");
+  assert.equal(removed, false);
+  assert.equal(isStoredFavorite("deal-123"), false);
+  assert.deepEqual(getStoredFavoriteIds(), []);
+
+  delete global.window;
+  delete global.localStorage;
+});
+

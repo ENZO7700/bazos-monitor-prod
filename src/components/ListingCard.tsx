@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { ExternalLink, MapPin, Phone, PhoneCall } from "lucide-react";
+import { ExternalLink, Heart, MapPin, Phone, PhoneCall } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryName } from "@/lib/categories";
 import { formatPrice, formatRelativeTime } from "@/lib/utils";
 import { extractPhonesFromText } from "@/lib/bazos-phone";
 import { calculateDistanceFromVaclavak } from "@/lib/praha-distance";
+import { isStoredFavorite, toggleStoredFavorite } from "@/lib/offline-storage";
 
 export interface ListingData {
   id: string;
@@ -55,6 +56,9 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
 
   // Vzdialenosť od centra Prahy (Václavák) a odhad ceny Bolt taxíka
   const vaclavakInfo = isCz && listing.location ? calculateDistanceFromVaclavak(listing.location) : null;
+
+  // Stav obľúbeného inzerátu (Záložky / Bookmarks)
+  const [isFav, setIsFav] = useState(() => (typeof window !== "undefined" ? isStoredFavorite(listing.id) : false));
 
   return (
     <Card className="overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
@@ -104,7 +108,26 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-start justify-between gap-2">
               <h3 className="line-clamp-2 font-medium leading-snug">{listing.title}</h3>
-              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const next = toggleStoredFavorite(listing.id);
+                    setIsFav(next);
+                  }}
+                  className="rounded-full p-1 text-muted-foreground transition-all hover:bg-rose-500/10 hover:text-rose-500"
+                  title={isFav ? "Odstrániť z obľúbených" : "Uložiť do obľúbených"}
+                >
+                  <Heart
+                    className={`h-4 w-4 transition-transform active:scale-125 ${
+                      isFav ? "fill-rose-500 text-rose-500 scale-110" : ""
+                    }`}
+                  />
+                </button>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
