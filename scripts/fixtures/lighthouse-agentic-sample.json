@@ -1,0 +1,21 @@
+{
+  "categories": {
+    "agentic-browsing": {
+      "score": 0.75,
+      "auditRefs": [
+        { "id": "llms-txt", "weight": 1 },
+        { "id": "document-title", "weight": 1 },
+        { "id": "html-has-lang", "weight": 1 },
+        { "id": "meta-description", "weight": 1 },
+        { "id": "webmcp-tools", "weight": 1 }
+      ]
+    }
+  },
+  "audits": {
+    "llms-txt": { "title": "llms.txt", "score": 1 },
+    "document-title": { "title": "Document has a title", "score": 1 },
+    "html-has-lang": { "title": "html has lang", "score": 1 },
+    "meta-description": { "title": "Meta description", "score": 1 },
+    "webmcp-tools": { "title": "WebMCP tools", "score": 0.5 }
+  }
+}

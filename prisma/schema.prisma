@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Watch {
+  id          String    @id @default(cuid())
+  name        String
+  category    String
+  keywords    String[]
+  minPrice    Int?
+  maxPrice    Int?
+  countries   String[]  @default(["SK", "CZ"])
+  isActive    Boolean   @default(true)
+  lastChecked DateTime?
+  createdAt   DateTime  @default(now())
+  listings    Listing[]
+}
+
+model Listing {
+  id              String         @id @default(cuid())
+  externalId      String
+  title           String
+  price           Int?
+  priceLabel      String?
+  currency        String         @default("EUR")
+  country         String         @default("SK")
+  url             String
+  thumbnail       String?
+  description     String?
+  location        String?
+  publishedAt     DateTime
+  watchId         String
+  watch           Watch          @relation(fields: [watchId], references: [id], onDelete: Cascade)
+  isRead          Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  /// Set after we attempted to fetch public listing HTML for phones (even if none found).
+  phonesFetchedAt DateTime?
+  listingPhones   ListingPhone[]
+  phoneMatches    PhoneMatch[]
+
+  @@unique([watchId, externalId, country])
+}
+
+model ListingPhone {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  phoneE164 String
+  phoneRaw  String
+  createdAt DateTime @default(now())
+
+  @@unique([listingId, phoneE164])
+  @@index([phoneE164])
+}
+
+model PhoneWatch {
+  id        String       @id @default(cuid())
+  label     String?
+  phoneE164 String       @unique
+  phoneRaw  String
+  notes     String?
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  matches   PhoneMatch[]
+}
+
+model PhoneMatch {
+  id           String     @id @default(cuid())
+  phoneWatchId String
+  phoneWatch   PhoneWatch @relation(fields: [phoneWatchId], references: [id], onDelete: Cascade)
+  listingId    String
+  listing      Listing    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  matchedAt    DateTime   @default(now())
+  seen         Boolean    @default(false)
+
+  @@unique([phoneWatchId, listingId])
+  @@index([seen])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}

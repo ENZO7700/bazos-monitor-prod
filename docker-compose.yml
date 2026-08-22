@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: bazos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bazos_monitor
+    ports:
+      - "5433:5432"
+    volumes:
+      - bazos_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d bazos_monitor"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bazos_pg_data:
