@@ -11,6 +11,8 @@ next-env.d.ts
 .env.vercel*
 .deploy-secrets
 tokenchrome.md
+docs/
+docs
 
 # Povolené šablóny
 !.env.example
