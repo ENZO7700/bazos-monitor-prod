@@ -81,8 +81,15 @@ export function WatchQuickStart() {
   };
 
   const handleParse = () => {
-    const intent = parseWatchIntent(query);
     if (!query.trim()) return;
+    const intent = parseWatchIntent(query);
+
+    // Ak používateľ zvolil konkrétnu krajinu v prepínači
+    if (targetCountry === "CZ" && (!intent.countries || intent.countries.length === 2)) {
+      intent.countries = ["CZ"];
+    } else if (targetCountry === "SK" && (!intent.countries || intent.countries.length === 2)) {
+      intent.countries = ["SK"];
+    }
 
     if (intent.confidence === "low") {
       router.push(buildWatchPrefillUrl(intent));

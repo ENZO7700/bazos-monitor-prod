@@ -34,14 +34,15 @@ export default function ListingsPage() {
   useEffect(() => {
     const prefs = getListingsPrefs();
     setWatchFilter(prefs.watchFilter);
+    setCountryFilter(prefs.countryFilter || "ALL");
     setUnreadOnly(prefs.unreadOnly);
     setPrefsLoaded(true);
   }, []);
 
   useEffect(() => {
     if (!prefsLoaded) return;
-    setListingsPrefs({ watchFilter, unreadOnly });
-  }, [watchFilter, unreadOnly, prefsLoaded]);
+    setListingsPrefs({ watchFilter, countryFilter, unreadOnly });
+  }, [watchFilter, countryFilter, unreadOnly, prefsLoaded]);
 
   const { data: watches, isError: watchesError } = useQuery({
     queryKey: ["watches"],
