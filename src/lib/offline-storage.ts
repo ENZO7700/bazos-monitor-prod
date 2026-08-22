@@ -14,6 +14,7 @@ export const MAX_LOCALSTORAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export interface ListingsPrefs {
   watchFilter: string;
+  countryFilter?: string;
   unreadOnly: boolean;
 }
 
@@ -298,6 +299,7 @@ export function getStoredStats(): Stats {
 export function getListingsPrefs(): ListingsPrefs {
   return readJson<ListingsPrefs>(LISTINGS_PREFS_KEY, {
     watchFilter: "all",
+    countryFilter: "ALL",
     unreadOnly: false,
   });
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -24,13 +25,19 @@ export default function DashboardPage() {
     queryFn: getStats,
   });
 
+  const [dashboardCountry, setDashboardCountry] = useState<string>("ALL");
+
   const {
     data: listings,
     isLoading: listingsLoading,
     isError: listingsError,
   } = useQuery({
-    queryKey: ["listings", { limit: 6 }],
-    queryFn: () => getListings({ limit: 6 }),
+    queryKey: ["listings", { limit: 6, country: dashboardCountry }],
+    queryFn: () =>
+      getListings({
+        limit: 6,
+        country: dashboardCountry === "ALL" ? undefined : dashboardCountry,
+      }),
   });
 
   const pollMutation = useMutation({
@@ -112,9 +119,50 @@ export default function DashboardPage() {
       ) : null}
 
       <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Najnovšie inzeráty</h2>
-          <Button variant="link" asChild className="text-primary">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <h2 className="text-xl font-semibold">Najnovšie inzeráty</h2>
+            {/* SK / CZ Switcher */}
+            <div className="flex items-center gap-1 rounded-md border border-border/80 bg-muted/40 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setDashboardCountry("ALL")}
+                className={cn(
+                  "rounded px-2 py-1 font-medium transition-all",
+                  dashboardCountry === "ALL"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                🌍 Všetko
+              </button>
+              <button
+                type="button"
+                onClick={() => setDashboardCountry("CZ")}
+                className={cn(
+                  "rounded px-2 py-1 font-medium transition-all",
+                  dashboardCountry === "CZ"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                🇨🇿 ČR
+              </button>
+              <button
+                type="button"
+                onClick={() => setDashboardCountry("SK")}
+                className={cn(
+                  "rounded px-2 py-1 font-medium transition-all",
+                  dashboardCountry === "SK"
+                    ? "bg-background text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                🇸🇰 SR
+              </button>
+            </div>
+          </div>
+          <Button variant="link" asChild className="text-primary p-0 h-auto sm:p-2 sm:h-9">
             <Link href="/listings">Zobraziť všetky</Link>
           </Button>
         </div>

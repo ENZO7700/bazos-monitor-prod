@@ -41,6 +41,7 @@ export function WatchQuickStart() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [targetCountry, setTargetCountry] = useState<"ALL" | "CZ" | "SK">("ALL");
   const [preview, setPreview] = useState<ParsedWatchIntent | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -118,39 +119,87 @@ export function WatchQuickStart() {
         </p>
       </div>
 
-      <form
-        toolname="quick_start_watch"
-        tooldescription="Vytvorí sledovanie z prirodzeného textu (napr. iPhone 15 pod 400€). Pri nejasnom vstupe presmeruje na formulár."
-        className="flex flex-col gap-2 sm:flex-row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleParse();
-        }}
-      >
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            name="query"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              if (preview) setPreview(null);
-            }}
-            placeholder="napr. iPhone 15 pod 400€ v BA"
-            className="pl-9"
-            aria-label="Čo hľadáš"
-            toolparamdescription="Čo používateľ hľadá, napr. iPhone 14 pod 350€"
-            required
-          />
+      <div className="space-y-4">
+        {/* SK / CZ / ALL Switcher */}
+        <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-muted/40 p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setTargetCountry("ALL")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+              targetCountry === "ALL"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            🌍 Všetko
+          </button>
+          <button
+            type="button"
+            onClick={() => setTargetCountry("CZ")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+              targetCountry === "CZ"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            🇨🇿 Česko (Bazoš.cz)
+          </button>
+          <button
+            type="button"
+            onClick={() => setTargetCountry("SK")}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all",
+              targetCountry === "SK"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            🇸🇰 Slovensko (Bazoš.sk)
+          </button>
         </div>
-        <Button
-          type="submit"
-          disabled={!query.trim() || createMutation.isPending}
-          className="shrink-0"
+
+        <form
+          toolname="quick_start_watch"
+          tooldescription="Vytvorí sledovanie z prirodzeného textu (napr. iPhone 15 pod 400€). Pri nejasnom vstupe presmeruje na formulár."
+          className="flex flex-col gap-2 sm:flex-row"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleParse();
+          }}
         >
-          Začať sledovať
-        </Button>
-      </form>
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              name="query"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (preview) setPreview(null);
+              }}
+              placeholder={
+                targetCountry === "CZ"
+                  ? "napr. iPhone 16 v Prahe do 20000 Kč"
+                  : targetCountry === "SK"
+                    ? "napr. iPhone 15 do 400 € v BA"
+                    : "napr. iPhone 16 / MacBook / Octavia"
+              }
+              className="pl-9"
+              aria-label="Čo hľadáš"
+              toolparamdescription="Čo používateľ hľadá, napr. iPhone 14 pod 350€"
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            disabled={!query.trim() || createMutation.isPending}
+            className="shrink-0"
+          >
+            Začať sledovať
+          </Button>
+        </form>
+      </div>
 
       <div className="mt-3 min-h-[5.5rem]" aria-live="polite">
         {preview ? (
@@ -189,7 +238,12 @@ export function WatchQuickStart() {
           "flex overflow-x-auto pb-1 [-ms-overflow-style:none] scrollbar-none sm:grid sm:overflow-visible sm:pb-0 sm:grid-cols-2 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden"
         )}
       >
-        {WATCH_TEMPLATES.map((template) => {
+        {WATCH_TEMPLATES.filter((template) => {
+          if (targetCountry === "ALL") return true;
+          if (!template.watch) return true;
+          const countries = template.watch.countries || ["SK", "CZ"];
+          return countries.includes(targetCountry);
+        }).map((template) => {
           const Icon = TEMPLATE_ICONS[template.icon] ?? Settings;
 
           if (template.href) {
