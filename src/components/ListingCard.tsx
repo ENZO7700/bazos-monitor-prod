@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryName } from "@/lib/categories";
 import { formatPrice, formatRelativeTime } from "@/lib/utils";
 import { extractPhonesFromText } from "@/lib/bazos-phone";
+import { calculateDistanceFromVaclavak } from "@/lib/praha-distance";
 
 export interface ListingData {
   id: string;
@@ -51,6 +52,9 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
     knownPhones.push(...extracted.phones);
   }
   const uniquePhones = Array.from(new Set(knownPhones));
+
+  // Vzdialenosť od centra Prahy (Václavák) a odhad ceny Bolt taxíka
+  const vaclavakInfo = isCz && listing.location ? calculateDistanceFromVaclavak(listing.location) : null;
 
   return (
     <Card className="overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
@@ -119,14 +123,35 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
               )}
             </div>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
               {listing.location && (
-                <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="inline-flex items-center gap-1 font-medium text-foreground/80">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   {listing.location}
                 </span>
               )}
               <span>{formatRelativeTime(listing.publishedAt)}</span>
+
+              {/* Vzdialenosť od Václaváku a Bolt taxi kalkulátor */}
+              {vaclavakInfo && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="outline" className="border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-medium px-2 py-0.5">
+                    📍 {vaclavakInfo.formattedDistance}
+                  </Badge>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.open(vaclavakInfo.bolt.boltUrl, "_blank", "noopener,noreferrer");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 transition-all shadow-2xs"
+                    title={`Odhadovaná cena odvozu z/do centra: ${vaclavakInfo.bolt.formattedPrice}`}
+                  >
+                    <span>🚕 Bolt {vaclavakInfo.bolt.formattedPrice}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Prominent Phone Number section */}
