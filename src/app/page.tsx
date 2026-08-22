@@ -25,7 +25,7 @@ export default function DashboardPage() {
     queryFn: getStats,
   });
 
-  const [dashboardCountry, setDashboardCountry] = useState<string>("ALL");
+  const [dashboardCountry, setDashboardCountry] = useState<string>("CZ");
 
   const {
     data: listings,

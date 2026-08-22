@@ -27,14 +27,14 @@ export default function ListingsPage() {
   const queryClient = useQueryClient();
   const isOnline = useOnlineStatus();
   const [watchFilter, setWatchFilter] = useState<string>("all");
-  const [countryFilter, setCountryFilter] = useState<string>("ALL");
+  const [countryFilter, setCountryFilter] = useState<string>("CZ");
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   useEffect(() => {
     const prefs = getListingsPrefs();
     setWatchFilter(prefs.watchFilter);
-    setCountryFilter(prefs.countryFilter || "ALL");
+    setCountryFilter(prefs.countryFilter || "CZ");
     setUnreadOnly(prefs.unreadOnly);
     setPrefsLoaded(true);
   }, []);

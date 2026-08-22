@@ -4,13 +4,13 @@ test.describe("SK/CZ Country Switcher", () => {
   test("Searcher & QuickStart switches countries and placeholders", async ({ page }) => {
     await page.goto("/");
 
-    // Default state: ALL
-    const searchInput = page.getByPlaceholder("napr. iPhone 16 / MacBook / Octavia").first();
+    // Default state: CZ
+    const searchInput = page.getByPlaceholder("napr. iPhone 16 v Prahe do 20000 Kč").first();
     await expect(searchInput).toBeVisible();
 
-    // Click CZ
-    await page.getByRole("button", { name: "🇨🇿 Česko (Bazoš.cz)" }).first().click();
-    await expect(page.getByPlaceholder("napr. iPhone 16 v Prahe do 20000 Kč").first()).toBeVisible();
+    // Click ALL
+    await page.getByRole("button", { name: "🌍 Všetko" }).first().click();
+    await expect(page.getByPlaceholder("napr. iPhone 16 / MacBook / Octavia").first()).toBeVisible();
 
     // Click SK
     await page.getByRole("button", { name: "🇸🇰 Slovensko (Bazoš.sk)" }).first().click();
@@ -21,7 +21,6 @@ test.describe("SK/CZ Country Switcher", () => {
     await page.goto("/");
 
     // We have pills next to "Najnovšie inzeráty"
-    const allBtn = page.getByRole("button", { name: "🌍 Všetko" }).nth(1); // 0 is in quickstart, 1 is in listings
     const czBtn = page.getByRole("button", { name: "🇨🇿 ČR" });
     const skBtn = page.getByRole("button", { name: "🇸🇰 SR" });
 
@@ -29,21 +28,20 @@ test.describe("SK/CZ Country Switcher", () => {
     await expect(czBtn).toBeVisible();
     await expect(skBtn).toBeVisible();
     
-    // Switch to CZ
-    await czBtn.click();
-    // In actual implementation, it updates the query, but we can just check if it changes visual state (e.g. gets shadow) or doesn't crash
-    await expect(czBtn).toBeEnabled();
-
     // Switch to SK
     await skBtn.click();
     await expect(skBtn).toBeEnabled();
+
+    // Switch back to CZ
+    await czBtn.click();
+    await expect(czBtn).toBeEnabled();
   });
 
   test("Listings Page country filter is persisted", async ({ page }) => {
     await page.goto("/listings");
 
-    // Click on the country filter select trigger
-    const countrySelect = page.getByRole("combobox").filter({ hasText: "Všetky krajiny" });
+    // Click on the country filter select trigger (Default is CZ)
+    const countrySelect = page.getByRole("combobox").filter({ hasText: "🇨🇿 Iba Bazoš.cz" });
     await expect(countrySelect).toBeVisible();
 
     // Open dropdown

@@ -299,7 +299,7 @@ export function getStoredStats(): Stats {
 export function getListingsPrefs(): ListingsPrefs {
   return readJson<ListingsPrefs>(LISTINGS_PREFS_KEY, {
     watchFilter: "all",
-    countryFilter: "ALL",
+    countryFilter: "CZ",
     unreadOnly: false,
   });
 }

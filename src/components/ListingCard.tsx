@@ -1,9 +1,13 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
+import { ExternalLink, MapPin, Phone, PhoneCall } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryName } from "@/lib/categories";
 import { formatPrice, formatRelativeTime } from "@/lib/utils";
-import { ExternalLink, MapPin, Phone } from "lucide-react";
-import Image from "next/image";
+import { extractPhonesFromText } from "@/lib/bazos-phone";
 
 export interface ListingData {
   id: string;
@@ -14,6 +18,7 @@ export interface ListingData {
   country?: string | null;
   url: string;
   thumbnail?: string | null;
+  description?: string | null;
   location?: string | null;
   publishedAt: string;
   isRead: boolean;
@@ -27,40 +32,77 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
+  const [secondPhotoFailed, setSecondPhotoFailed] = useState(false);
   const isCz = listing.country === "CZ" || listing.url.includes(".bazos.cz");
   const currency = listing.currency ?? (isCz ? "CZK" : "EUR");
 
+  // Derive secondary photo if thumbnail exists
+  const primaryThumbnail = listing.thumbnail;
+  const secondaryThumbnail =
+    primaryThumbnail && !secondPhotoFailed
+      ? primaryThumbnail.replace(/\/img\/[1t]\//, "/img/2/")
+      : null;
+
+  // Extract phones from listingPhones prop or fallback to description/title
+  const knownPhones = listing.listingPhones?.map((p) => p.phoneE164) || [];
+  if (knownPhones.length === 0 && (listing.description || listing.title)) {
+    const textToScan = `${listing.title} ${listing.description || ""}`;
+    const extracted = extractPhonesFromText(textToScan);
+    knownPhones.push(...extracted.phones);
+  }
+  const uniquePhones = Array.from(new Set(knownPhones));
+
   return (
-    <Card className="overflow-hidden transition-colors hover:border-primary/50">
+    <Card className="overflow-hidden transition-all hover:border-primary/50 hover:shadow-md">
       <CardContent className="p-0">
         <a
           href={listing.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex gap-4 p-4"
+          className="flex flex-col gap-3 p-4 sm:flex-row sm:gap-4"
           onClick={() => !listing.isRead && onMarkRead?.(listing.id)}
         >
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-            {listing.thumbnail ? (
-              <Image
-                src={listing.thumbnail}
-                alt={listing.title}
-                fill
-                sizes="80px"
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                Bez foto
+          {/* Photo gallery preview (At least 2 photos if available) */}
+          <div className="flex shrink-0 gap-1.5 sm:flex-col">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted border border-border/50">
+              {primaryThumbnail ? (
+                <Image
+                  src={primaryThumbnail}
+                  alt={listing.title}
+                  fill
+                  sizes="80px"
+                  className="object-cover transition-transform duration-300 hover:scale-105"
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">
+                  Bez foto
+                </div>
+              )}
+            </div>
+
+            {/* 2nd Photo if available */}
+            {secondaryThumbnail && secondaryThumbnail !== primaryThumbnail && (
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-muted border border-border/50">
+                <Image
+                  src={secondaryThumbnail}
+                  alt={`${listing.title} - foto 2`}
+                  fill
+                  sizes="80px"
+                  className="object-cover transition-transform duration-300 hover:scale-105"
+                  unoptimized
+                  onError={() => setSecondPhotoFailed(true)}
+                />
               </div>
             )}
           </div>
+
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex items-start justify-between gap-2">
               <h3 className="line-clamp-2 font-medium leading-snug">{listing.title}</h3>
               <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-lg font-semibold text-primary">
                 {formatPrice(listing.price, listing.priceLabel, currency)}
@@ -76,25 +118,43 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
                 <Badge variant="secondary">{listing.watch.name}</Badge>
               )}
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
               {listing.location && (
                 <span className="inline-flex items-center gap-1">
-                  <MapPin className="h-3 w-3 shrink-0" />
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
                   {listing.location}
                 </span>
               )}
               <span>{formatRelativeTime(listing.publishedAt)}</span>
             </div>
-            {listing.listingPhones && listing.listingPhones.length > 0 && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
-                <Phone className="h-3 w-3 shrink-0 text-muted-foreground" />
-                {listing.listingPhones.map((p) => (
-                  <Badge key={p.phoneE164} variant="outline" className="font-mono text-[10px]">
-                    {p.phoneE164}
-                  </Badge>
-                ))}
-              </div>
-            )}
+
+            {/* Prominent Phone Number section */}
+            <div className="mt-2.5 pt-2 border-t border-border/40 flex flex-wrap items-center gap-2">
+              {uniquePhones.length > 0 ? (
+                uniquePhones.map((phone) => (
+                  <button
+                    key={phone}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = `tel:${phone}`;
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold font-mono text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors shadow-xs"
+                    title="Klikni pre vytočenie čísla"
+                  >
+                    <PhoneCall className="h-3.5 w-3.5" />
+                    <span>{phone}</span>
+                  </button>
+                ))
+              ) : (
+                <div className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Phone className="h-3 w-3" />
+                  <span>Telefón overiteľný na inzeráte</span>
+                </div>
+              )}
+            </div>
           </div>
         </a>
       </CardContent>

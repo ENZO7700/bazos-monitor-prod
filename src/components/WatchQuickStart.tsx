@@ -41,7 +41,7 @@ export function WatchQuickStart() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
-  const [targetCountry, setTargetCountry] = useState<"ALL" | "CZ" | "SK">("ALL");
+  const [targetCountry, setTargetCountry] = useState<"ALL" | "CZ" | "SK">("CZ");
   const [preview, setPreview] = useState<ParsedWatchIntent | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
