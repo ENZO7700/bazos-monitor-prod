@@ -26,7 +26,17 @@ export async function GET(request: Request) {
       ...(limit ? { take: parseInt(limit, 10) } : {}),
     });
 
-    return NextResponse.json(listings);
+    // Prioritizácia inzerátov s verejným telefónnym číslom
+    const sorted = [...listings].sort((a, b) => {
+      const aHasPhone = a.listingPhones && a.listingPhones.length > 0 ? 1 : 0;
+      const bHasPhone = b.listingPhones && b.listingPhones.length > 0 ? 1 : 0;
+      if (aHasPhone !== bHasPhone) {
+        return bHasPhone - aHasPhone; // Telefón na prvom mieste
+      }
+      return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
+    });
+
+    return NextResponse.json(sorted);
   } catch (error) {
     return apiErrorResponse(error);
   }

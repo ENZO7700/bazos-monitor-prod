@@ -1,4 +1,5 @@
 import type { Listing, Watch, PhoneWatch, Stats } from "@/lib/api";
+import { extractPhonesFromText } from "@/lib/bazos-phone";
 
 const LISTINGS_PREFS_KEY = "bazos:listings-prefs";
 const INSTALL_DISMISSED_KEY = "bazos:install-dismissed";
@@ -221,6 +222,19 @@ export function deleteStoredWatch(id: string): void {
    LISTINGS (Inzeráty v LocalStorage)
    ========================================================================= */
 
+/**
+ * Zistí, či inzerát obsahuje verejné telefónne číslo (v objekte listingPhones, popise alebo nadpise).
+ */
+export function hasPublicPhone(l: Listing): boolean {
+  if (l.listingPhones && l.listingPhones.length > 0) return true;
+  if (l.description || l.title) {
+    const text = `${l.title} ${l.description || ""}`;
+    const extracted = extractPhonesFromText(text);
+    return extracted.phones.length > 0;
+  }
+  return false;
+}
+
 export function getStoredListings(params?: {
   watchId?: string;
   unread?: boolean;
@@ -238,6 +252,19 @@ export function getStoredListings(params?: {
   if (params?.country && params.country !== "ALL") {
     listings = listings.filter((l) => l.country === params.country);
   }
+
+  // ⭐ PRIORITA: Inzeráty s verejným telefónnym číslom sa zobrazujú ako prvé!
+  listings.sort((a, b) => {
+    const aHasPhone = hasPublicPhone(a) ? 1 : 0;
+    const bHasPhone = hasPublicPhone(b) ? 1 : 0;
+    if (aHasPhone !== bHasPhone) {
+      return bHasPhone - aHasPhone; // Inzeráty s telefónom idú dopredu!
+    }
+    const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
   if (params?.limit && params.limit > 0) {
     listings = listings.slice(0, params.limit);
   }
@@ -266,7 +293,19 @@ export function addStoredListings(newListings: Listing[]): { added: number; tota
   for (const item of newListings) {
     const key = `${item.country}:${item.externalId}`;
     if (!existingExternalIds.has(key)) {
-      toAdd.push(item);
+      // Automaticky doplň telefónne čísla z popisu, ak chýbajú
+      const resolvedPhones =
+        item.listingPhones && item.listingPhones.length > 0
+          ? item.listingPhones
+          : extractPhonesFromText(`${item.title} ${item.description || ""}`).phones.map((p) => ({
+              phoneE164: p,
+              phoneRaw: p,
+            }));
+
+      toAdd.push({
+        ...item,
+        listingPhones: resolvedPhones,
+      });
       existingExternalIds.add(key);
       added++;
     }

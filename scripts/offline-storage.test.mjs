@@ -63,3 +63,62 @@ test("offline listings filter properly by country (SK vs CZ)", async () => {
   delete global.window;
   delete global.localStorage;
 });
+
+test("offline listings prioritize listings with public phone numbers", async () => {
+  const mockStorage = new Map();
+  const storageObj = {
+    getItem: (k) => mockStorage.get(k) ?? null,
+    setItem: (k, v) => mockStorage.set(k, String(v)),
+    removeItem: (k) => mockStorage.delete(k),
+    clear: () => mockStorage.clear(),
+    get length() { return mockStorage.size; },
+    key: (i) => Array.from(mockStorage.keys())[i] ?? null,
+  };
+  global.window = { localStorage: storageObj };
+  global.localStorage = storageObj;
+
+  const { addStoredListings, getStoredListings } = await import("../src/lib/offline-storage.ts");
+
+  // Inzerát 1: Starší dátum, ALE MÁ TELEFÓN V POPISE
+  // Inzerát 2: Novší dátum, BEZ TELEFÓNU
+  // Inzerát 3: Starší dátum, MÁ listingPhones
+  addStoredListings([
+    {
+      id: "no-phone",
+      externalId: "np-1",
+      title: "iPhone 15 bez čísla",
+      description: "Píšte len na email.",
+      country: "CZ",
+      publishedAt: "2026-08-22T10:00:00Z",
+    },
+    {
+      id: "phone-in-text",
+      externalId: "pt-1",
+      title: "iPhone 16 volajte",
+      description: "Tel: +420 601 111 222 osobný odber.",
+      country: "CZ",
+      publishedAt: "2026-08-20T10:00:00Z",
+    },
+    {
+      id: "phone-in-prop",
+      externalId: "pp-1",
+      title: "MacBook Pro M3",
+      country: "CZ",
+      listingPhones: [{ phoneE164: "+420777123456", phoneRaw: "777 123 456" }],
+      publishedAt: "2026-08-19T10:00:00Z",
+    },
+  ]);
+
+  const listings = getStoredListings({ country: "CZ" });
+  assert.equal(listings.length, 3);
+
+  // Prvé 2 inzeráty MUSIA mať telefónne číslo
+  assert.ok(listings[0].id === "phone-in-text" || listings[0].id === "phone-in-prop");
+  assert.ok(listings[1].id === "phone-in-text" || listings[1].id === "phone-in-prop");
+  // Inzerát bez čísla musí byť na konci (index 2)
+  assert.equal(listings[2].id, "no-phone");
+
+  delete global.window;
+  delete global.localStorage;
+});
+
