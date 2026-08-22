@@ -5,6 +5,8 @@ Legitímna PWA aplikácia na sledovanie nových inzerátov na [Bazoš.sk](https:
 ## Funkcie
 
 - **Multi-country vyhľadávanie**: Sledovanie inzerátov na **🇸🇰 Bazoš.sk** aj **🇨🇿 Bazoš.cz** s možnosťou nezávislého zapnutia/vypnutia pre každé sledovanie
+- **☕ AI Espresso Digest**: Ranné (08:00) a večerné (20:00) AI vyhodnocovanie a výber **TOP 3 najlepších úlovkov dňa** (Praha & ČR) pre iPhone 16/17, MacBook ≥ 20k Kč a Razer
+- **AI Klasifikácia & Intent Parser**: Inteligentný Mistral prompt pre všetkých 15 kategórií Bazošu bez zbytočných predvolených filtrov
 - Sledovanie inzerátov podľa kategórie (RSS)
 - Filtrovanie podľa kľúčových slov, cenového rozpätia (€ a Kč) a krajiny
 - Dashboard so štatistikami
