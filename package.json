@@ -33,6 +33,7 @@
     "agentic:score": "node scripts/parse-lighthouse-agentic.mjs",
     "test:scripts": "node --import tsx --test scripts/*.test.mjs",
     "test:integration": "node --import tsx scripts/integration-test.mjs",
+    "test:integrity": "node --import tsx --test scripts/master-integrity.test.mjs",
     "test": "npm run test:scripts && npm run test:e2e",
     "pwa:dev": "npm run build && npm run start",
     "test:e2e": "playwright test",

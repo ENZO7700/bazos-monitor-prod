@@ -53,6 +53,11 @@ export function normalizePhoneE164(input: string): string | null {
     digits = "421" + digits;
   }
 
+  // Bare 9-digit CZ mobile without prefix (e.g. 777123456, 602111222)
+  if (digits.length === 9 && (digits.startsWith("6") || digits.startsWith("7"))) {
+    digits = "420" + digits;
+  }
+
   // SK: +421 + 9 subscriber digits
   if (digits.startsWith("421") && digits.length === 12) {
     const sub = digits.slice(3);
