@@ -1,48 +1,49 @@
 # Bazoš Monitor
 
-> PWA aplikácia na sledovanie nových inzerátov na Bazoš.sk cez verejné RSS feedy.
+> PWA aplikácia na sledovanie nových inzerátov na Bazoš.sk a Bazoš.cz cez verejné RSS feedy s podporou AI Espresso Digestu.
 
-Bazoš Monitor používa výhradne oficiálne RSS kanály z https://www.bazos.sk.
-Aplikácia nevykonáva scraping mimo RSS. Odkazy na inzeráty vedú priamo na Bazoš.
+Bazoš Monitor používa výhradne oficiálne verejné RSS kanály z https://www.bazos.sk a https://www.bazos.cz.
+Aplikácia nevykonáva nelegitímny scraping. Odkazy na inzeráty vedú priamo na Bazoš.
 
 ## Hlavné stránky
 
-- [Dashboard](/): Rýchly štart „Čo hľadáš?“, šablóny sledovaní, štatistiky a najnovšie inzeráty
-- [Sledovania](/watches): Správa RSS sledovaní podľa kategórie a kľúčových slov
-- [Nové sledovanie](/watches/new): Vytvorenie nového sledovania
-- [Inzeráty](/listings): Zoznam nájdených inzerátov s filtrami
+- [Dashboard](/): Rýchly štart „Čo hľadáš?“, AI Espresso Digest (Praha & ČR), šablóny sledovaní, štatistiky a najnovšie inzeráty
+- [Sledovania](/watches): Správa RSS sledovaní podľa kategórie, kľúčových slov a krajín (🇸🇰 SK / 🇨🇿 CZ)
+- [Nové sledovanie](/watches/new): Vytvorenie nového sledovania s prepínačmi krajín
+- [Inzeráty](/listings): Zoznam nájdených inzerátov s filtrami podľa kategórie, ceny a krajiny
+- [Telefóny](/phones): Watchlist telefónnych čísel pre detekciu známych kontaktov (+421 a +420)
 - [Nastavenia](/settings): Push notifikácie a inštalácia PWA
 - [O aplikácii](/about): Zdroj dát, súkromie a podmienky
 
-## Verejné API (GET)
+## Verejné API
 
-- `/api/health` — stav aplikácie a databázy
-- `/api/watches` — zoznam sledovaní
-- `/api/listings` — zoznam inzerátov (query: watchId, unread, limit)
-- `/api/stats` — štatistiky (aktívne sledovania, nové dnes, neprečítané)
-- `/manifest.webmanifest` — PWA manifest
+- `GET /api/health` — stav aplikácie a databázy
+- `GET /api/watches` — zoznam sledovaní
+- `GET /api/listings` — zoznam inzerátov (query: watchId, unread, country, limit)
+- `GET /api/stats` — štatistiky (aktívne sledovania, nové dnes, neprečítané)
+- `GET /api/digest` & `POST /api/digest` — AI Espresso Digest pre Prahu & ČR (iPhone 16/17, MacBook, Razer)
+- `POST /api/digest/cron` — ranné a večerné generovanie a odosielanie push digestu (Authorization: Bearer CRON_SECRET)
+- `GET /manifest.webmanifest` — PWA manifest
 
-## Rýchly štart (homepage)
+## Rýchly štart & Šablóny (homepage)
 
-Používateľ môže napísať čo hľadá (napr. „iPhone 15 pod 400€") alebo vybrať šablónu:
-- Mobil do 400 € (kategória mobilné telefóny)
-- Auto do 8 000 €
-- Prenájom bytu
-- Herná konzola (PS5, Xbox, Nintendo)
-- Notebook do 600 €
+Používateľ môže napísať čo hľadá (napr. „iPhone 16 pod 20000 Kč v Prahe“ alebo „Octavia do 6000 eur“) alebo vybrať šablónu:
+- 🇨🇿 iPhone 16 / 17 (Praha & ČR)
+- 🇨🇿 MacBook od 20 000 Kč (Praha & ČR)
+- 🇨🇿 Notebook Razer Gaming (Praha & ČR)
+- 🇸🇰 Mobil do 400 €
+- 🇸🇰 Auto do 8 000 €
+- 🇸🇰 Herná konzola (PS5, Xbox, Nintendo)
 - Vlastné nastavenie → `/watches/new`
 
-Homepage (`/`) exponuje deklaratívny nástroj `quick_start_watch` (formulár s parametrom `query`).
+## AI Klasifikácia & Mistral Agent
 
-## WebMCP nástroje (experimentálne)
-
-Stránka `/` exponuje deklaratívny nástroj `quick_start_watch` (parameter `query`).
-Stránka `/watches/new` exponuje deklaratívny nástroj `create_watch` pre vytvorenie sledovania.
-Globálne nástroje (Chrome 150+): `poll_listings`, `list_watches`, `get_stats`, `navigate_listings`.
-
-`quick_start_watch` prijíma parameter `query` (prirodzený text) a vytvorí sledovanie alebo presmeruje na `/watches/new`.
+- Podpora prirodzeného jazyka naprieč všetkými 15 kategóriami Bazošu.
+- Detekcia cien v mene EUR (€) a CZK (Kč).
+- Automatické rozpoznanie českých a slovenských lokalít a nastavenie krajiny.
+- Generovanie ranného a večerného AI Espresso Digestu s výberom TOP 3 úlovkov dňa.
 
 ## Ďalšie informácie
 
 - Privacy a zdroj dát: [/about](/about)
-- Deploy dokumentácia: pozri DEPLOY.md v repozitári
+- Deploy dokumentácia: pozri [DEPLOY.md](/DEPLOY.md) v repozitári

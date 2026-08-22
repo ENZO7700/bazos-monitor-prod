@@ -55,6 +55,7 @@ npx prisma migrate resolve --applied 20260307200000_init
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Verejný VAPID kľúč pre push |
 | `VAPID_PRIVATE_KEY` | Súkromný VAPID kľúč |
 | `VAPID_SUBJECT` | `mailto:tvoj@email.sk` |
+| `MISTRAL_API_KEY` | *(Voliteľné)* API kľúč pre Mistral AI (systém má zabudovaný offline fallback) |
 
 Vygeneruj secrets:
 
@@ -65,27 +66,22 @@ npx web-push generate-vapid-keys # VAPID
 
 Šablóna: [`.env.production.example`](.env.production.example)
 
-## 4. GitHub Actions cron (každých 10 min) — odporúčané
+## 4. Cron úlohy (Polling & AI Espresso Digest)
 
-Workflow: [`.github/workflows/cron-poll.yml`](.github/workflows/cron-poll.yml)
+Aplikácia obsahuje 2 produkčné cron endpointy (zabezpečené `Authorization: Bearer CRON_SECRET`):
 
-Nastav repo secrets cez CLI:
+1. **RSS Polling** (`/api/cron/poll-rss`):
+   - Odporúčaná frekvencia: každých 10–15 minút.
+   - Sťahuje a filtruje nové inzeráty zo **🇸🇰 Bazoš.sk** aj **🇨🇿 Bazoš.cz**.
+2. **☕ AI Espresso Digest** (`/api/digest/cron`):
+   - Odporúčaná frekvencia: 2× denne (08:00 ráno a 20:00 večer).
+   - Vyhodnotí TOP 3 úlovky dňa pre **Prahu / ČR** (iPhone 16/17, MacBook, Razer) a odošle súhrnnú Push notifikáciu.
 
-```bash
-gh secret set CRON_SECRET --body "TVOJ_CRON_SECRET"
-gh secret set PRODUCTION_URL --body "https://tvoja-app.vercel.app"
-gh workflow run cron-poll.yml
-```
-
-Vercel Hobby cron (`vercel.json`) zostáva ako záloha 1× denne.
-
-Alternatíva: [cron-job.org](https://cron-job.org) — `GET /api/cron/poll-rss` s `Authorization: Bearer CRON_SECRET`.
-
-Overenie:
+Overenie cez curl:
 
 ```bash
-curl -H "Authorization: Bearer TVOJ_CRON_SECRET" \
-  https://TVOJA-DOMENA.vercel.app/api/cron/poll-rss
+curl -X POST -H "Authorization: Bearer TVOJ_CRON_SECRET" \
+  https://TVOJA-DOMENA.vercel.app/api/digest/cron
 ```
 
 ## 5. Health check
