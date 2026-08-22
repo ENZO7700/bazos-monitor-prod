@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
 
-const port = process.argv[2] ?? "3000";
+const port = process.argv[2] ?? "3838";
 const WAIT_TIMEOUT_MS = 3000;
 const POLL_INTERVAL_MS = 100;
 

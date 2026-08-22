@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/free-port.mjs 3000 && rm -rf .next && node scripts/check-db.mjs",
-    "dev": "next dev",
+    "predev": "node scripts/free-port.mjs 3838 && rm -rf .next && node scripts/check-db.mjs",
+    "dev": "next dev -p 3838",
     "build": "prisma generate && prisma migrate deploy && next build",
-    "start": "next start",
+    "start": "next start -p 3838",
     "lint": "eslint src",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate deploy",
