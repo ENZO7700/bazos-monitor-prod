@@ -176,11 +176,10 @@ export default function PhonesPage() {
         </div>
       </div>
 
-      {(isError || matchesError) && (
+      {isError && (
         <QueryErrorBanner
           onRetry={() => {
             void queryClient.invalidateQueries({ queryKey: ["phone-watches"] });
-            void queryClient.invalidateQueries({ queryKey: ["phone-matches"] });
           }}
         />
       )}

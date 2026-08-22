@@ -22,6 +22,8 @@ import { isStoredFavorite, toggleStoredFavorite, addStoredListings } from "@/lib
 
 export interface ListingData {
   id: string;
+  externalId?: string;
+  watchId?: string;
   title: string;
   price: number | null;
   priceLabel?: string | null;
@@ -89,8 +91,21 @@ export function ListingCard({ listing, onMarkRead }: ListingCardProps) {
           // Persist to LocalStorage
           addStoredListings([
             {
-              ...listing,
+              id: listing.id,
+              externalId: listing.externalId || listing.id,
+              watchId: listing.watchId || "general",
+              title: listing.title,
+              price: listing.price,
+              priceLabel: listing.priceLabel ?? null,
+              currency: listing.currency ?? (isCz ? "CZK" : "EUR"),
+              country: listing.country ?? (isCz ? "CZ" : "SK"),
+              url: listing.url,
+              thumbnail: listing.thumbnail ?? null,
+              description: listing.description ?? null,
               location: data.location || listing.location,
+              publishedAt: listing.publishedAt,
+              isRead: listing.isRead,
+              watch: listing.watch ? { name: listing.watch.name, category: listing.watch.category || "mo" } : undefined,
               listingPhones: data.phones.map((p: string) => ({ phoneE164: p, phoneRaw: p })),
             },
           ]);
