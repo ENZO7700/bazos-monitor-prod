@@ -6,29 +6,45 @@ export interface WatchFilters {
   maxPrice?: number | null;
 }
 
+/**
+ * Normalizes text for search (lowercased, removes diacritics / accents).
+ */
+function normalizeForSearch(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function matchesWatchFilters(
   listing: ParsedListing,
   filters: WatchFilters
 ): boolean {
-  const haystack = `${listing.title} ${listing.description ?? ""}`.toLowerCase();
+  const fullText = normalizeForSearch(
+    `${listing.title} ${listing.description ?? ""} ${listing.location ?? ""}`
+  );
 
-  if (filters.keywords.length > 0) {
-    const hasKeyword = filters.keywords.some((kw) =>
-      haystack.includes(kw.toLowerCase().trim())
-    );
-    if (!hasKeyword) return false;
+  // Strict AND matching: All specified keywords must match in title/description/location
+  if (filters.keywords && filters.keywords.length > 0) {
+    const validKeywords = filters.keywords
+      .map((kw) => normalizeForSearch(kw.trim()))
+      .filter((kw) => kw.length > 0);
+
+    if (validKeywords.length > 0) {
+      const matchesAll = validKeywords.every((kw) => fullText.includes(kw));
+      if (!matchesAll) return false;
+    }
   }
 
-  if (filters.minPrice != null && listing.price != null) {
+  // Minimum price filter
+  if (filters.minPrice != null) {
+    if (listing.price === null) return false;
     if (listing.price < filters.minPrice) return false;
   }
 
-  if (filters.maxPrice != null && listing.price != null) {
-    if (listing.price > filters.maxPrice) return false;
-  }
-
-  if (filters.minPrice != null && listing.price === null) {
-    return false;
+  // Maximum price filter
+  if (filters.maxPrice != null) {
+    if (listing.price !== null && listing.price > filters.maxPrice) return false;
   }
 
   return true;
