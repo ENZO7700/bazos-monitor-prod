@@ -31,3 +31,12 @@ test("toApiError handles non-Error values", () => {
   assert.equal(result.status, 500);
   assert.equal(result.message, "Unknown error");
 });
+
+test("toApiError maps DriverAdapterError and socket failures to 503", () => {
+  const customErr = new Error("socket hang up");
+  customErr.name = "DriverAdapterError";
+  const result = toApiError(customErr);
+  assert.equal(result.status, 503);
+  assert.equal(result.message, "Database unavailable");
+});
+

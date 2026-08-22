@@ -33,7 +33,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(watch, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error && typeof error === "object" && "issues" in error) {
+      return NextResponse.json({ error: "Neplatné vstupné údaje" }, { status: 400 });
+    }
+    return apiErrorResponse(error);
   }
 }
