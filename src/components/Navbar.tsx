@@ -50,11 +50,22 @@ export function Navbar() {
           })}
         </nav>
 
-        <Button asChild size="sm" className="md:hidden">
-          <Link href="/watches/new" aria-label="Nové sledovanie">
-            <Plus className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 hover:scale-105"
+            title="Pikachu Login & Profil"
+          >
+            <span className="text-sm">⚡</span>
+            <span className="hidden sm:inline">Pikachu</span>
           </Link>
-        </Button>
+
+          <Button asChild size="sm" className="md:hidden">
+            <Link href="/watches/new" aria-label="Nové sledovanie">
+              <Plus className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
     </header>
   );
