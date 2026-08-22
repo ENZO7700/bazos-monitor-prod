@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Home, List, Phone, Settings } from "lucide-react";
+import { Bell, Heart, Home, List, Phone, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", label: "Domov", icon: Home },
   { href: "/watches", label: "Sledovania", icon: List },
   { href: "/listings", label: "Inzeráty", icon: Bell },
+  { href: "/favorites", label: "Obľúbené", icon: Heart },
   { href: "/phones", label: "Telefóny", icon: Phone },
   { href: "/settings", label: "Nastavenia", icon: Settings },
 ];
