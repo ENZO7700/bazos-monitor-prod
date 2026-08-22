@@ -1,3 +1,16 @@
+import {
+  getStoredWatches,
+  saveStoredWatch,
+  deleteStoredWatch,
+  getStoredListings,
+  markStoredListingRead,
+  addStoredListings,
+  getStoredStats,
+  getStoredPhoneWatches,
+  saveStoredPhoneWatch,
+  deleteStoredPhoneWatch,
+} from "./offline-storage";
+
 export interface Watch {
   id: string;
   name: string;
@@ -114,6 +127,7 @@ export interface PollResponse {
   newListings: number;
   notificationsSent: number;
   phoneMatches?: number;
+  listings?: Listing[];
 }
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
@@ -125,11 +139,19 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   return res.json();
 }
 
-export function getWatches(): Promise<Watch[]> {
-  return fetchJson("/api/watches");
+export async function getWatches(): Promise<Watch[]> {
+  try {
+    const remote = await fetchJson<Watch[]>("/api/watches");
+    if (Array.isArray(remote) && remote.length > 0) {
+      return remote;
+    }
+    return getStoredWatches();
+  } catch {
+    return getStoredWatches();
+  }
 }
 
-export function createWatch(data: {
+export async function createWatch(data: {
   name: string;
   category: string;
   keywords: string[];
@@ -137,14 +159,28 @@ export function createWatch(data: {
   maxPrice?: number | null;
   countries?: string[];
 }): Promise<Watch> {
-  return fetchJson("/api/watches", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    const created = await fetchJson<Watch>("/api/watches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    saveStoredWatch(created);
+    return created;
+  } catch {
+    return saveStoredWatch({
+      name: data.name,
+      category: data.category,
+      keywords: data.keywords,
+      minPrice: data.minPrice ?? null,
+      maxPrice: data.maxPrice ?? null,
+      countries: data.countries ?? ["SK", "CZ"],
+      isActive: true,
+    });
+  }
 }
 
-export function updateWatch(
+export async function updateWatch(
   id: string,
   data: Partial<{
     name: string;
@@ -156,42 +192,99 @@ export function updateWatch(
     isActive: boolean;
   }>
 ): Promise<Watch> {
-  return fetchJson(`/api/watches/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    const updated = await fetchJson<Watch>(`/api/watches/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    saveStoredWatch(updated);
+    return updated;
+  } catch {
+    const stored = getStoredWatches().find((w) => w.id === id);
+    if (stored) {
+      return saveStoredWatch({
+        ...stored,
+        ...data,
+        id,
+      });
+    }
+    throw new Error("Sledovanie nenájdené");
+  }
 }
 
-export function deleteWatch(id: string): Promise<void> {
-  return fetchJson(`/api/watches/${id}`, { method: "DELETE" });
+export async function deleteWatch(id: string): Promise<void> {
+  try {
+    await fetchJson(`/api/watches/${id}`, { method: "DELETE" });
+  } catch {
+    // Offline mode
+  }
+  deleteStoredWatch(id);
 }
 
-export function getListings(params?: {
+export async function getListings(params?: {
   watchId?: string;
   unread?: boolean;
   country?: string;
   limit?: number;
 }): Promise<Listing[]> {
-  const search = new URLSearchParams();
-  if (params?.watchId) search.set("watchId", params.watchId);
-  if (params?.unread) search.set("unread", "true");
-  if (params?.country && params.country !== "ALL") search.set("country", params.country);
-  if (params?.limit) search.set("limit", String(params.limit));
-  const qs = search.toString();
-  return fetchJson(`/api/listings${qs ? `?${qs}` : ""}`);
+  try {
+    const search = new URLSearchParams();
+    if (params?.watchId) search.set("watchId", params.watchId);
+    if (params?.unread) search.set("unread", "true");
+    if (params?.country && params.country !== "ALL") search.set("country", params.country);
+    if (params?.limit) search.set("limit", String(params.limit));
+    const qs = search.toString();
+
+    const remote = await fetchJson<Listing[]>(`/api/listings${qs ? `?${qs}` : ""}`);
+    if (Array.isArray(remote)) {
+      addStoredListings(remote);
+      return remote;
+    }
+    return getStoredListings(params);
+  } catch {
+    return getStoredListings(params);
+  }
 }
 
-export function markListingRead(id: string): Promise<Listing> {
-  return fetchJson(`/api/listings/${id}/read`, { method: "PATCH" });
+export async function markListingRead(id: string): Promise<Listing> {
+  try {
+    return await fetchJson(`/api/listings/${id}/read`, { method: "PATCH" });
+  } catch {
+    const updated = markStoredListingRead(id);
+    if (updated) return updated;
+    return { id, isRead: true } as Listing;
+  }
 }
 
-export function getStats(): Promise<Stats> {
-  return fetchJson("/api/stats");
+export async function getStats(): Promise<Stats> {
+  try {
+    return await fetchJson<Stats>("/api/stats");
+  } catch {
+    return getStoredStats();
+  }
 }
 
-export function triggerPoll(): Promise<PollResponse> {
-  return fetchJson("/api/poll", { method: "POST" });
+export async function triggerPoll(): Promise<PollResponse> {
+  try {
+    const watches = getStoredWatches();
+    const res = await fetchJson<PollResponse>("/api/poll", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ watches }),
+    });
+
+    if (res.listings && Array.isArray(res.listings)) {
+      addStoredListings(res.listings);
+    }
+    return res;
+  } catch {
+    return {
+      watchesProcessed: getStoredWatches().length,
+      newListings: 0,
+      notificationsSent: 0,
+    };
+  }
 }
 
 export function subscribePush(subscription: PushSubscription): Promise<void> {
@@ -211,23 +304,31 @@ export function unsubscribePush(endpoint: string): Promise<void> {
   });
 }
 
-export function getPhoneWatches(): Promise<PhoneWatch[]> {
-  return fetchJson("/api/phone-watches");
+export async function getPhoneWatches(): Promise<PhoneWatch[]> {
+  try {
+    return await fetchJson("/api/phone-watches");
+  } catch {
+    return getStoredPhoneWatches();
+  }
 }
 
-export function createPhoneWatch(data: {
+export async function createPhoneWatch(data: {
   phone: string;
   label?: string | null;
   notes?: string | null;
 }): Promise<PhoneWatch> {
-  return fetchJson("/api/phone-watches", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    return await fetchJson("/api/phone-watches", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    return saveStoredPhoneWatch(data);
+  }
 }
 
-export function updatePhoneWatch(
+export async function updatePhoneWatch(
   id: string,
   data: Partial<{
     phone: string;
@@ -236,15 +337,30 @@ export function updatePhoneWatch(
     active: boolean;
   }>
 ): Promise<PhoneWatch> {
-  return fetchJson(`/api/phone-watches/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
+  try {
+    return await fetchJson(`/api/phone-watches/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  } catch {
+    const list = getStoredPhoneWatches();
+    const item = list.find((p) => p.id === id);
+    if (item) {
+      Object.assign(item, data);
+      return item;
+    }
+    throw new Error("Phone watch not found");
+  }
 }
 
-export function deletePhoneWatch(id: string): Promise<void> {
-  return fetchJson(`/api/phone-watches/${id}`, { method: "DELETE" });
+export async function deletePhoneWatch(id: string): Promise<void> {
+  try {
+    await fetchJson(`/api/phone-watches/${id}`, { method: "DELETE" });
+  } catch {
+    // Offline
+  }
+  deleteStoredPhoneWatch(id);
 }
 
 export function searchPhone(
