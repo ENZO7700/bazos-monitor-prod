@@ -4,20 +4,29 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 
-# Env & secrets (nikdy necommitovať)
+# Env & secrets (never commit values)
 .env
 .env.local
 .env.*.local
 .env.vercel*
+.env.production
+.env.development
 .deploy-secrets
 tokenchrome.md
-docs/
-docs
-.github/
 
-# Povolené šablóny
+# Allowed templates (must follow .env* patterns above)
 !.env.example
 !.env.production.example
+
+# Credentials & sensitive artifacts
+*.apk
+*.pdf
+credentials.json
+*.pem
+*.p12
+*.key
+*.log
+debug.log
 
 # Prisma generated client
 src/generated
@@ -37,4 +46,7 @@ src/generated
 # Lighthouse report outputs
 /lighthouse-pwa.json
 /lighthouse-agentic.json
-.env*
+
+# Local docs (may contain deploy notes)
+docs/
+docs

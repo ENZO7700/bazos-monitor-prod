@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { db } from "@/lib/db";
 import { updateWatchSchema } from "@/lib/validations";
 
@@ -17,8 +18,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return NextResponse.json(watch);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return apiErrorResponse(error);
   }
 }
 
