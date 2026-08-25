@@ -136,10 +136,6 @@ npm run test:e2e:ui     # interaktívny režim
 
 Testuje: API (health, ready, CRUD, auth), navigáciu, dashboard, watches, listings, settings — desktop aj mobile viewport.
 
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) runs `npm run lint` and `npm run build` on push/PR to `main`, with a PostgreSQL service container for Prisma migrations.
-
 ## Deploy na Vercel
 
 Kompletný checklist: **[DEPLOY.md](./DEPLOY.md)**
