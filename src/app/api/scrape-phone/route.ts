@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { toApiError } from "@/lib/api-error";
 import { extractPhonesFromText } from "@/lib/bazos-phone";
 import { db } from "@/lib/db";
 
@@ -88,7 +89,8 @@ export async function GET(request: Request) {
       location,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to scrape phone";
-    return NextResponse.json({ error: message, phones: [] }, { status: 500 });
+    const { message, status } = toApiError(error);
+    console.error("[api]", error);
+    return NextResponse.json({ error: message, phones: [] }, { status });
   }
 }

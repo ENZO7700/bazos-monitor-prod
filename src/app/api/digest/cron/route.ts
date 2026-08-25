@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { isCronAuthorized } from "@/lib/auth";
 import { sendEspressoDigestPush } from "@/lib/digest-service";
 
@@ -17,7 +18,6 @@ export async function POST(request: Request) {
       generatedAt: result.digest.generatedAt,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Cron digest failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }

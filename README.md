@@ -35,6 +35,27 @@ Stránka **Telefóny** (`/phones`):
 - Prisma + PostgreSQL (Neon)
 - TanStack Query, Serwist PWA, web-push
 
+## Environment variables
+
+Copy `.env.example` to `.env` for local development (`npm run env:bootstrap` can automate this).
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `CRON_SECRET` | Yes (prod) | Bearer token for cron/poll endpoints |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | No | Web push — public VAPID key |
+| `VAPID_PRIVATE_KEY` | No | Web push — private VAPID key |
+| `VAPID_SUBJECT` | No | Web push — contact URI (e.g. `mailto:…`) |
+| `MISTRAL_API_KEY` | No | AI digest/classification (has offline fallback) |
+| `NEXT_PUBLIC_WEBMCP_ORIGIN_TRIAL_TOKEN` | No | Chrome WebMCP origin trial token |
+
+For Vercel production, see also `.env.production.example`. Never commit `.env`, `.env.local`, or secret values.
+
+## Health checks
+
+- `GET /api/health` — readiness probe (includes DB connectivity)
+- `GET /api/ready` — alias of `/api/health`
+
 ## Lokálny vývoj
 
 ### 1. Závislosti
@@ -65,12 +86,7 @@ Tým sa spustí PostgreSQL 16 v Dockeri na porte **5433** (vyhýba sa konfliktu 
 ### 2b. Databáza (Neon — alternatíva / produkcia)
 
 1. Vytvor free PostgreSQL na [neon.tech](https://neon.tech)
-2. Skopíruj connection string do `.env`:
-
-```env
-DATABASE_URL="postgresql://..."
-CRON_SECRET="nahodny-tajny-retazec"
-```
+2. Nastav `DATABASE_URL` a `CRON_SECRET` v `.env` (viď tabuľku vyššie)
 
 ```bash
 npm run db:push
@@ -89,13 +105,7 @@ npm run db:seed
 npx web-push generate-vapid-keys
 ```
 
-Pridaj do `.env`:
-
-```env
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=...
-VAPID_PRIVATE_KEY=...
-VAPID_SUBJECT=mailto:tvoj@email.sk
-```
+Pridaj `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` a `VAPID_SUBJECT` do `.env`.
 
 ### 4. Spustenie
 
@@ -124,7 +134,11 @@ npm run test:e2e        # spustí dev server na porte 3099 + testy
 npm run test:e2e:ui     # interaktívny režim
 ```
 
-Testuje: API (health, CRUD, auth), navigáciu, dashboard, watches, listings, settings — desktop aj mobile viewport.
+Testuje: API (health, ready, CRUD, auth), navigáciu, dashboard, watches, listings, settings — desktop aj mobile viewport.
+
+## CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs `npm run lint` and `npm run build` on push/PR to `main`, with a PostgreSQL service container for Prisma migrations.
 
 ## Deploy na Vercel
 

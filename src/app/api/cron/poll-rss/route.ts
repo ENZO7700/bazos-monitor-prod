@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { isCronAuthorized } from "@/lib/auth";
 import { pollAllWatches } from "@/lib/poll-service";
 
@@ -11,7 +12,6 @@ export async function GET(request: Request) {
     const result = await pollAllWatches();
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Poll failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }

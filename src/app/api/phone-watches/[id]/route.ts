@@ -43,11 +43,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     return NextResponse.json(watch);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid request";
-    if (message.includes("Record to update not found") || message.includes("P2025")) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
-    }
-    return NextResponse.json({ error: message }, { status: 400 });
+    return apiErrorResponse(error);
   }
 }
 

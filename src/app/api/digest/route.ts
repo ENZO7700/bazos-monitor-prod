@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { generateEspressoDigest, sendEspressoDigestPush } from "@/lib/digest-service";
 
 export async function GET() {
@@ -6,8 +7,7 @@ export async function GET() {
     const digest = await generateEspressoDigest();
     return NextResponse.json(digest);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Chyba pri generovaní digestu";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }
 
@@ -24,7 +24,6 @@ export async function POST(request: Request) {
     const digest = await generateEspressoDigest();
     return NextResponse.json({ digest, sentCount: 0 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Chyba pri generovaní digestu";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiErrorResponse(error);
   }
 }

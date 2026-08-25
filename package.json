@@ -5,7 +5,7 @@
   "scripts": {
     "predev": "node scripts/free-port.mjs 3838 && rm -rf .next && node scripts/check-db.mjs --warn",
     "dev": "next dev -p 3838",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && if [ -n \"$DATABASE_URL\" ]; then prisma migrate deploy; fi && next build",
     "start": "next start -p 3838",
     "lint": "eslint src",
     "db:push": "prisma db push",

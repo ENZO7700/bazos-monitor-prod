@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiErrorResponse } from "@/lib/api-error";
 import { db } from "@/lib/db";
 import { pushSubscribeSchema } from "@/lib/validations";
 
@@ -22,8 +23,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid subscription";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return apiErrorResponse(error);
   }
 }
 
@@ -36,7 +36,6 @@ export async function DELETE(request: Request) {
     await db.pushSubscription.delete({ where: { endpoint } }).catch(() => {});
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Delete failed";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return apiErrorResponse(error);
   }
 }
